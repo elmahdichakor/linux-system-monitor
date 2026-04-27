@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <string.h>
 void get_memory_usage() {
     FILE *fp = fopen("/proc/meminfo", "r");
     if (fp == NULL) {

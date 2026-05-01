@@ -1,10 +1,11 @@
 CC=gcc
 CFLAGS=-Wall -Wextra
+LIBS=-lncurses
 
-all: sys_monitor
+all: mahdi_monitor
 
-sys_monitor: sys_monitor.c
-	$(CC) $(CFLAGS) sys_monitor.c -o sys_monitor
+mahdi_monitor: main.c stats.c
+	$(CC) $(CFLAGS) main.c stats.c -o mahdi_monitor $(LIBS)
 
 clean:
-	rm -f sys_monitor
+	rm -f mahdi_monitor

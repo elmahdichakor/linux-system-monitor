@@ -1,31 +1,47 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-void get_memory_usage() {
-    FILE *fp = fopen("/proc/meminfo", "r");
-    if (fp == NULL) {
-        perror("Error opening /proc/meminfo");
-        return;
-    }
+#include <unistd.h>
 
+void get_stats() {
+    long memTotal, memFree, uptimeSeconds;
+    long user, nice, system, idle;
     char label[32];
-    unsigned long value;
-    unsigned long memTotal = 0, memFree = 0;
 
-    while (fscanf(fp, "%31s %lu kB", label, &value) != EOF) {
-        if (strcmp(label, "MemTotal:") == 0) memTotal = value;
-        if (strcmp(label, "MemFree:") == 0) memFree = value;
+    // 1. قراءة الرام (RAM)
+    FILE *memInfo = fopen("/proc/meminfo", "r");
+    while (fscanf(memInfo, "%s %lu kB", label, &memTotal) != EOF) {
+        if (strcmp(label, "MemTotal:") == 0) break;
     }
+    while (fscanf(memInfo, "%s %lu kB", label, &memFree) != EOF) {
+        if (strcmp(label, "MemFree:") == 0) break;
+    }
+    fclose(memInfo);
 
-    fclose(fp);
+    // 2. قراءة الـ CPU (قراءة أول سطر من /proc/stat)
+    FILE *statFile = fopen("/proc/stat", "r");
+    fscanf(statFile, "cpu %lu %lu %lu %lu", &user, &nice, &system, &idle);
+    fclose(statFile);
 
-    printf("--- Linux Memory Monitor ---\n");
-    printf("Total RAM: %lu MB\n", memTotal / 1024);
-    printf("Free RAM:  %lu MB\n", memFree / 1024);
-    printf("Used RAM:  %lu MB\n", (memTotal - memFree) / 1024);
+    // 3. قراءة الـ Uptime (شحال والماكينة شاعلة)
+    FILE *uptimeFile = fopen("/proc/uptime", "r");
+    fscanf(uptimeFile, "%lu", &uptimeSeconds);
+    fclose(uptimeFile);
+
+    // تنظيف الشاشة وعرض النتائج
+    printf("\033[H\033[J"); // ANSI escape code باش يمسح الـ Terminal
+    printf("--- 🐧 Mahdi's Advanced System Monitor ---\n");
+    printf("RAM Usage: %lu MB / %lu MB\n", (memTotal - memFree) / 1024, memTotal / 1024);
+    printf("CPU Raw Stats: User:%lu System:%lu Idle:%lu\n", user, system, idle);
+    printf("System Uptime: %lu minutes\n", uptimeSeconds / 60);
+    printf("------------------------------------------\n");
+    printf("Press Ctrl+C to exit.\n");
 }
 
 int main() {
-    get_memory_usage();
+    while (1) {
+        get_stats();
+        sleep(2); // يتسنى 2 ثواني ويعاود يقرأ
+    }
     return 0;
 }
